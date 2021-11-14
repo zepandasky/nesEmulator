@@ -1,0 +1,1 @@
+g++ -o olcExampleProgram *.cpp *.h -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++17

@@ -5,7 +5,7 @@
 		"type": "shell",
 		"label": "g++ build active file",
 		"command": "/usr/bin/g++",
-		"args": ["-g", "${workspaceFolder}/*.cpp", "${workspaceFolder}/*.h", "-o", "${fileDirname}/${fileBasenameNoExtension}", "-lX11",  "-lGL", "-lpthread", "-lpng"],
+		"args": ["-g", "${workspaceFolder}/source_files/*.cpp", "${workspaceFolder}/header_files/*.h", "-o", "${fileDirname}/${fileBasenameNoExtension}", "-lX11",  "-lGL", "-lpthread", "-lpng"],
 		"options": {
 		  "cwd": "/usr/bin"
 		},
