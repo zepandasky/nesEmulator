@@ -1,6 +1,8 @@
 //
 // Created by zep on 11/13/21.
-//
+// Instruction implementation is based on the following two links:
+//https://www.masswerk.at/6502/6502_instruction_set.html#DEC
+//http://www.6502.org/tutorials/6502opcodes.html#BIT
 #include "CPU6502.h"
 #include "Bus.h"
 
@@ -510,11 +512,19 @@ uint8_t CPU6502::ZPY()
     return 0;
 }
 
+/* Read byte from current addr_abs*/
 uint8_t CPU6502::fetch()
 {
     if (!(lookup[opcode].addrmode == &CPU6502::IMP))
         fetched = read(addr_abs);
     return fetched;
+}
+
+/* Write byte to current addr_abs*/
+void CPU6502::writeToFetchAddress(uint8_t val)
+{
+    if (!(lookup[opcode].addrmode == &CPU6502::IMP))
+        write(addr_abs, val);
 }
 
 /**********************************************************/
@@ -543,6 +553,7 @@ uint8_t CPU6502::ADC()
     return 1;
 }
 
+/* And memomory with accumulator */
 uint8_t CPU6502::AND()
 {
     fetch();
@@ -555,7 +566,7 @@ uint8_t CPU6502::AND()
     return 1;
 }
 
-//Arithmetic shift left
+/* Arithmetic shift left */
 uint8_t CPU6502::ASL()
 {
     fetch();
@@ -766,46 +777,83 @@ uint8_t CPU6502::CLV() {
 uint8_t CPU6502::CMP() {
     fetch();
 
-    setFlag(Z, fetched == a);
+    setFlag(Z, ((fetched == a) & 0x00FF) == 0x0000);
     setFlag(C, fetched >= a);
-    
-    /* if both z and c are set then N is zero else its bit 7 of the accumulator */
-    if(getFlag(Z) && getFlag(C))
-    {
-        setFlag(N, 0);
-    } else 
-    {
-        setFlag(N, a & (1 << 7));
-    }
+    setFlag(N, a & (1 << 7));
 
     return 1;
 }
 
+/* Compare with y register */
 uint8_t CPU6502::CPX() {
-    return 0;
+    fetch();
+
+    setFlag(Z, ((fetched == x) & 0x00FF) == 0x0000);
+    setFlag(C, fetched >= x);
+    setFlag(N, x & (1 << 7));
+
+    return 1;
 }
 
+/* Compare with x register */
 uint8_t CPU6502::CPY() {
-    return 0;
+    fetch();
+
+    setFlag(Z, ((fetched == y) & 0x00FF) == 0x0000);
+    setFlag(C, fetched >= y);
+    setFlag(N, y & (1 << 7));
+
+    return 1;
 }
 
+/* Decrement memory by one */
 uint8_t CPU6502::DEC() {
+    fetch();
+
+    temp = (fetched - 1) & 0x00FF;
+
+    writeToFetchAddress(temp);
+
+    setFlag(Z, (temp & 0x00FF) == 0x0000);
+    setFlag(N, temp & 0x80);
     return 0;
 }
 
+/* Decrement index X by one */
 uint8_t CPU6502::DEX() {
+    x = x - 1;
+    setFlag(Z, x == 0x00);
+    setFlag(N, x & 0x80);
     return 0;
 }
 
+/* Decrement index Y by one */
 uint8_t CPU6502::DEY() {
+    y = y - 1;
+    setFlag(Z, y == 0x00);
+    setFlag(N, y & 0x80);
     return 0;
 }
 
+/* Exclusive-OR memory with Accumulator */
 uint8_t CPU6502::EOR() {
+    fetch();
+    a = fetched ^ a;
+    setFlag(Z, a == 0x00);
+    setFlag(N, a & 0x80);
     return 0;
 }
 
+/* Incremenet memory by one */
 uint8_t CPU6502::INC() {
+    fetch();
+
+    temp = (fetched + 1) & 0x00FF;
+    
+    writeToFetchAddress(temp)
+    setFlag(Z, (temp & 0x00FF) == 0x0000);
+    setFlag(N, temp & 0x80);
+
     return 0;
 }
 
@@ -817,6 +865,9 @@ uint8_t CPU6502::INX() {
 }
 
 uint8_t CPU6502::INY() {
+    y++;
+    setFlag(Z, y == 0x00);
+	setFlag(N, y & 0x80);
     return 0;
 }
 

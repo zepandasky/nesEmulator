@@ -5,25 +5,8 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
-
-void fillMemory(Bus& ram)
-{
-    uint16_t memoryStartOffset = 0x8000; // start of the execution area
-
-    //Instructions
-    std::stringstream ss;
-    ss << "6D 01 00";
-
-    while (!ss.eof())
-    {
-        std::string b;
-        ss >> b;
-        ram.ram[memoryStartOffset++] = (uint8_t)std::stoul(b, nullptr, 16);
-    }
-    ram.ram[0xFFFC] = 0x00;
-    ram.ram[0xFFFD] = 0x80;
-
-}
+/* This class is provided by the OneLoneCoder on youtube */
+/* To change instruction memory change the stringstream in the onusercreate function */
 class Demo_olc6502 : public olc::PixelGameEngine
 {
 public:
@@ -59,20 +42,20 @@ public:
     void DrawCpu(int x, int y)
     {
         std::string status = "STATUS: ";
-        DrawString(x , y , "STATUS:", olc::WHITE);
-        DrawString(x  + 64, y, "N", nes.cpu.status & CPU6502::N ? olc::GREEN : olc::RED);
-        DrawString(x  + 80, y , "V", nes.cpu.status & CPU6502::V ? olc::GREEN : olc::RED);
-        DrawString(x  + 96, y , "-", nes.cpu.status & CPU6502::U ? olc::GREEN : olc::RED);
-        DrawString(x  + 112, y , "B", nes.cpu.status & CPU6502::B ? olc::GREEN : olc::RED);
-        DrawString(x  + 128, y , "D", nes.cpu.status & CPU6502::D ? olc::GREEN : olc::RED);
-        DrawString(x  + 144, y , "I", nes.cpu.status & CPU6502::I ? olc::GREEN : olc::RED);
-        DrawString(x  + 160, y , "Z", nes.cpu.status & CPU6502::Z ? olc::GREEN : olc::RED);
-        DrawString(x  + 178, y , "C", nes.cpu.status & CPU6502::C ? olc::GREEN : olc::RED);
-        DrawString(x , y + 10, "PC: $" + hex(nes.cpu.pc, 4));
-        DrawString(x , y + 20, "A: $" +  hex(nes.cpu.a, 2) + "  [" + std::to_string(nes.cpu.a) + "]");
-        DrawString(x , y + 30, "X: $" +  hex(nes.cpu.x, 2) + "  [" + std::to_string(nes.cpu.x) + "]");
-        DrawString(x , y + 40, "Y: $" +  hex(nes.cpu.y, 2) + "  [" + std::to_string(nes.cpu.y) + "]");
-        DrawString(x , y + 50, "Stack P: $" + hex(nes.cpu.stkp, 4));
+        DrawString(x, y, "STATUS:", olc::WHITE);
+        DrawString(x + 64, y, "N", nes.cpu.status & CPU6502::N ? olc::GREEN : olc::RED);
+        DrawString(x + 80, y, "V", nes.cpu.status & CPU6502::V ? olc::GREEN : olc::RED);
+        DrawString(x + 96, y, "-", nes.cpu.status & CPU6502::U ? olc::GREEN : olc::RED);
+        DrawString(x + 112, y, "B", nes.cpu.status & CPU6502::B ? olc::GREEN : olc::RED);
+        DrawString(x + 128, y, "D", nes.cpu.status & CPU6502::D ? olc::GREEN : olc::RED);
+        DrawString(x + 144, y, "I", nes.cpu.status & CPU6502::I ? olc::GREEN : olc::RED);
+        DrawString(x + 160, y, "Z", nes.cpu.status & CPU6502::Z ? olc::GREEN : olc::RED);
+        DrawString(x + 178, y, "C", nes.cpu.status & CPU6502::C ? olc::GREEN : olc::RED);
+        DrawString(x, y + 10, "PC: $" + hex(nes.cpu.pc, 4));
+        DrawString(x, y + 20, "A: $" + hex(nes.cpu.a, 2) + "  [" + std::to_string(nes.cpu.a) + "]");
+        DrawString(x, y + 30, "X: $" + hex(nes.cpu.x, 2) + "  [" + std::to_string(nes.cpu.x) + "]");
+        DrawString(x, y + 40, "Y: $" + hex(nes.cpu.y, 2) + "  [" + std::to_string(nes.cpu.y) + "]");
+        DrawString(x, y + 50, "Stack P: $" + hex(nes.cpu.stkp, 4));
     }
 
     void DrawCode(int x, int y, int nLines)
@@ -112,8 +95,20 @@ public:
         // Load Program (assembled at https://www.masswerk.at/6502/assembler.html)
 
         // Convert hex string into bytes for RAM
+        /*
+        *=$8000
+        INX
+        STX $0000
+        ADC $0000
+        CMP $0000
+        ADC $0000
+        CMP $0000
+        */
+
         std::stringstream ss;
-        ss << "8E 01 00 E8 6D 01 00";
+        ss << "E8 8E 00 00 6D 00 00 CD 00 00 CD 01 00";
+
+        //Program memory starts at address 0x8000
         uint16_t nOffset = 0x8000;
         while (!ss.eof())
         {
@@ -122,11 +117,10 @@ public:
             nes.ram[nOffset++] = (uint8_t)std::stoul(b, nullptr, 16);
         }
 
-        // Set Reset Vector
+        //When the cpu is reset the cpu looks at 0xFFFC (low byte) and 0xFFFD (high byte) for an address where it can find the program memory
+        //WHich is 0x8000
         nes.ram[0xFFFC] = 0x00;
         nes.ram[0xFFFD] = 0x80;
-
-        // Dont forget to set IRQ and NMI vectors if you want to play with those
 
         // Extract dissassembly
         mapAsm = nes.cpu.disassemble(0x0000, 0xFFFF);
@@ -140,14 +134,12 @@ public:
     {
         Clear(olc::DARK_BLUE);
 
-
         if (GetKey(olc::Key::SPACE).bPressed)
         {
             do
             {
                 nes.cpu.clock();
-            }
-            while (!nes.cpu.complete());
+            } while (!nes.cpu.complete());
         }
 
         if (GetKey(olc::Key::R).bPressed)
@@ -164,7 +156,6 @@ public:
         DrawRam(2, 182, 0x8000, 16, 16);
         DrawCpu(448, 2);
         DrawCode(448, 72, 26);
-
 
         DrawString(10, 370, "SPACE = Step Instruction    R = RESET    I = IRQ    N = NMI");
 
